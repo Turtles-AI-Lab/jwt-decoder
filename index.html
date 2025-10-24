@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Free JWT decoder. Decode JSON Web Tokens, view header and payload, validate structure.">
+    <title>JWT Decoder | JSON Web Token Decoder & Inspector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #667eea; --secondary: #764ba2; --success: #48bb78; --warning: #f6ad55; --danger: #fc8181; --dark: #1a202c; --light: #f7fafc; }
+        body { font-family: 'Monaco', 'Menlo', monospace; background: var(--dark); color: white; }
+        header { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); padding: 50px 20px; text-align: center; }
+        header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
+        .section { background: #2d3748; padding: 30px; border-radius: 15px; margin-bottom: 30px; border: 2px solid #4a5568; }
+        h2 { color: var(--primary); margin-bottom: 20px; }
+        textarea { width: 100%; min-height: 150px; padding: 15px; background: var(--dark); border: 2px solid #4a5568; color: white; border-radius: 8px; font-family: inherit; resize: vertical; }
+        textarea:focus { outline: none; border-color: var(--primary); }
+        .jwt-parts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
+        .jwt-part { padding: 20px; border-radius: 10px; text-align: center; }
+        .header-part { background: rgba(251, 113, 133, 0.2); border: 2px solid #fb7185; }
+        .payload-part { background: rgba(139, 92, 246, 0.2); border: 2px solid #8b5cf6; }
+        .signature-part { background: rgba(34, 197, 94, 0.2); border: 2px solid #22c55e; }
+        .code-block { background: var(--dark); padding: 20px; border-radius: 10px; border: 2px solid #4a5568; overflow-x: auto; margin-top: 20px; }
+        .code-block pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+        .alert { padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .alert-success { background: rgba(72, 187, 120, 0.2); border: 2px solid var(--success); }
+        .alert-danger { background: rgba(252, 129, 129, 0.2); border: 2px solid var(--danger); }
+        .alert-warning { background: rgba(246, 173, 85, 0.2); border: 2px solid var(--warning); }
+        button { padding: 12px 30px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-right: 10px; }
+        button:hover { background: var(--secondary); }
+        .examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
+        .example-card { background: var(--dark); padding: 20px; border: 2px solid #4a5568; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+        .example-card:hover { border-color: var(--primary); }
+        footer { background: var(--dark); border-top: 2px solid #4a5568; text-align: center; padding: 30px 20px; margin-top: 60px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🔐 JWT Decoder</h1>
+        <p>Decode & inspect JSON Web Tokens</p>
+    </header>
+
+    <div class="container">
+        <div class="section">
+            <h2>📝 Paste Your JWT</h2>
+            <textarea id="jwtInput" placeholder="Paste your JWT token here...&#10;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
+            <div style="margin-top: 15px;">
+                <button onclick="decode()">🔓 Decode</button>
+                <button onclick="clearAll()">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <div id="resultSection" style="display: none;">
+            <div class="section">
+                <h2>🎯 JWT Structure</h2>
+                <div class="jwt-parts">
+                    <div class="jwt-part header-part">
+                        <h3>Header</h3>
+                        <p style="opacity: 0.8; margin-top: 10px;">Algorithm & Type</p>
+                    </div>
+                    <div class="jwt-part payload-part">
+                        <h3>Payload</h3>
+                        <p style="opacity: 0.8; margin-top: 10px;">Claims & Data</p>
+                    </div>
+                    <div class="jwt-part signature-part">
+                        <h3>Signature</h3>
+                        <p style="opacity: 0.8; margin-top: 10px;">Verification</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alerts"></div>
+
+            <div class="section">
+                <h2>📋 Header</h2>
+                <div class="code-block">
+                    <pre id="headerOutput"></pre>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📦 Payload</h2>
+                <div class="code-block">
+                    <pre id="payloadOutput"></pre>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔏 Signature</h2>
+                <div class="code-block">
+                    <pre id="signatureOutput"></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💡 Example JWTs</h2>
+            <div class="examples">
+                <div class="example-card" onclick="loadExample('basic')">
+                    <h3>🔹 Basic JWT</h3>
+                    <p style="opacity: 0.7; margin-top: 10px;">Simple token with user info</p>
+                </div>
+                <div class="example-card" onclick="loadExample('auth')">
+                    <h3>🔸 Auth Token</h3>
+                    <p style="opacity: 0.7; margin-top: 10px;">Authentication with roles</p>
+                </div>
+                <div class="example-card" onclick="loadExample('expired')">
+                    <h3>⏰ Expired Token</h3>
+                    <p style="opacity: 0.7; margin-top: 10px;">Past expiration time</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>ℹ️ About JWT</h2>
+            <p style="line-height: 1.8; opacity: 0.9;">
+                JSON Web Tokens (JWT) are an open standard (RFC 7519) for securely transmitting information between parties as a JSON object.
+                JWTs consist of three parts separated by dots: <strong style="color: #fb7185;">Header</strong>, <strong style="color: #8b5cf6;">Payload</strong>, and <strong style="color: #22c55e;">Signature</strong>.
+            </p>
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                <strong>⚠️ Security Warning:</strong> JWTs are encoded, not encrypted. Anyone can decode and read the contents. Never include sensitive information in a JWT without additional encryption.
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p><strong>Built by <a href="https://turtles-ai-lab.github.io/Turtles-AI-Lab/" target="_blank" style="color: var(--primary);">Turtles AI Lab</a></strong></p>
+        <p style="margin-top: 10px;"><a href="https://github.com/Turtles-AI-Lab/jwt-decoder" style="color: var(--primary);">View on GitHub</a></p>
+    </footer>
+
+    <script>
+        const examples = {
+            basic: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+            auth: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNjczMjExNTIzLCJleHAiOjE2NzMyMTUxMjN9.signature',
+            expired: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjN9.signature'
+        };
+
+        function base64UrlDecode(str) {
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+            const pad = str.length % 4;
+            if (pad) str += '='.repeat(4 - pad);
+            return atob(str);
+        }
+
+        function loadExample(type) {
+            document.getElementById('jwtInput').value = examples[type];
+            decode();
+        }
+
+        function decode() {
+            const jwt = document.getElementById('jwtInput').value.trim();
+
+            if (!jwt) {
+                alert('Please paste a JWT token');
+                return;
+            }
+
+            const parts = jwt.split('.');
+
+            if (parts.length !== 3) {
+                showAlert('danger', 'Invalid JWT format. JWTs must have 3 parts separated by dots.');
+                return;
+            }
+
+            try {
+                // Decode header
+                const header = JSON.parse(base64UrlDecode(parts[0]));
+                document.getElementById('headerOutput').textContent = JSON.stringify(header, null, 2);
+
+                // Decode payload
+                const payload = JSON.parse(base64UrlDecode(parts[1]));
+                document.getElementById('payloadOutput').textContent = JSON.stringify(payload, null, 2);
+
+                // Show signature
+                document.getElementById('signatureOutput').textContent = parts[2];
+
+                // Show result section
+                document.getElementById('resultSection').style.display = 'block';
+
+                // Check expiration
+                checkExpiration(payload);
+                checkAlgorithm(header);
+
+                showAlert('success', '✅ JWT decoded successfully!');
+
+            } catch (error) {
+                showAlert('danger', '❌ Error decoding JWT: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        function checkExpiration(payload) {
+            if (payload.exp) {
+                const expDate = new Date(payload.exp * 1000);
+                const now = new Date();
+
+                if (expDate < now) {
+                    showAlert('danger', `⏰ Token expired on ${expDate.toLocaleString()}`);
+                } else {
+                    const timeLeft = Math.floor((expDate - now) / 1000 / 60);
+                    showAlert('success', `✅ Token valid until ${expDate.toLocaleString()} (${timeLeft} minutes remaining)`);
+                }
+            }
+        }
+
+        function checkAlgorithm(header) {
+            if (header.alg === 'none') {
+                showAlert('danger', '⚠️ WARNING: Algorithm is "none". This token has no signature!');
+            } else if (header.alg) {
+                showAlert('success', `🔐 Algorithm: ${header.alg}`);
+            }
+        }
+
+        function showAlert(type, message) {
+            const alerts = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alerts.appendChild(alert);
+        }
+
+        function clearAll() {
+            document.getElementById('jwtInput').value = '';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('alerts').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
