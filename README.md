@@ -1,5 +1,13 @@
 # 🔐 JWT Decoder
 
+
+![GitHub stars](https://img.shields.io/github/stars/Turtles-AI-Lab/jwt-decoder?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Turtles-AI-Lab/jwt-decoder?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Turtles-AI-Lab/jwt-decoder)
+![GitHub license](https://img.shields.io/github/license/Turtles-AI-Lab/jwt-decoder)
+![GitHub last commit](https://img.shields.io/github/last-commit/Turtles-AI-Lab/jwt-decoder)
+
+
 A free, client-side JSON Web Token (JWT) decoder and inspector.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
